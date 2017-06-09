@@ -37,11 +37,14 @@ public class Mover : MonoBehaviour
     void UpdateMovement()
     {
         if (applyGravity)
+        {
             velocity += gravity * Time.deltaTime;
+            if (velocity.y < terminalDownY)
+                velocity.y = terminalDownY;
+        }
 
-        Debug.LogWarning("velocity.y: " + velocity.y);
-        if (velocity.y < terminalDownY)
-            velocity.y = terminalDownY;
+        //Debug.LogWarning("velocity.y: " + velocity.y);
+
 
         CastMove(velocity * Time.deltaTime);
     }

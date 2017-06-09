@@ -10,21 +10,24 @@ public class Player : MonoBehaviour
 
     public Sprite spriteFloat;
     public Sprite spriteFly;
+    public Sprite spriteFlyBreak;
     public Sprite spriteGround;
 
+    public float burstSpeed;
+    public float flyMaxSpeedDeceleration;
+    public float downFlyMaxSpeedAcceleration;
+    public float downExtraFlyMaxSpeed;
     public float maxFlyTime;
     public float flyTimeRechargedPoint;
     public float flyBurnSpeed = 1f, flyRechargeSpeed = 1f;
+    public float flyReleaseSpeedMultiplier = .5f;
+    public float flyReleaseTimePenalty = .2f;
 
     public float maxGlideXSpeed = 1f;
     public float glideAcceleration = 1f;
+    public float glideDeceleration;
+    public float glideDownAccel;
 
-    public enum FlyTimeMode
-    {
-        CanFly,
-        Recharging,
-    }
-    FlyTimeMode flyTimeMode;
     float flyTime;
 
     GameObject trailInstance;
@@ -38,12 +41,14 @@ public class Player : MonoBehaviour
     Mover mover;
     bool holdingFly, holdingGlide;
     float originalTrailWidth;
+    float currentFlyMaxSpeed;
 
     void Awake()
     {
         mover = GetComponent<Mover>();
 
         flyTime = maxFlyTime;
+        currentFlyMaxSpeed = mover.flyMaxSpeed;
     }
 
     void Update()
@@ -53,29 +58,20 @@ public class Player : MonoBehaviour
 
     void UpdateInput()
     {
-        switch (flyTimeMode)
-        {
-            case FlyTimeMode.CanFly:
-                break;
-            case FlyTimeMode.Recharging:
-                if (mover.onGround)
-                    flyTime = maxFlyTime;
-                //else
-                //    flyTime += Time.deltaTime * flyRechargeSpeed;
 
-                //if (flyTime >= maxFlyTime)
-                //{
-                //    flyTime = maxFlyTime;
-                //    flyTimeMode = FlyTimeMode.CanFly;
-                //}
-                break;
-        }
 
         if (Input.GetMouseButtonDown(0))
         {
             if (CanFly())
             {
                 holdingFly = true;
+
+                if (mover.onGround)
+                {
+                    currentFlyMaxSpeed = burstSpeed;
+                    var dir = (Global.GetWorldPosition(Input.mousePosition) - transform.position).normalized;
+                    mover.velocity = dir * currentFlyMaxSpeed;
+                }
             }
         }
         if (Input.GetMouseButton(0))
@@ -88,6 +84,12 @@ public class Player : MonoBehaviour
         if (holdingFly && !Input.GetMouseButton(0))
         {
             holdingFly = false;
+            if (mover.velocity.y > 0f)
+            {
+                mover.velocity.y *= flyReleaseSpeedMultiplier;
+                flyTime -= flyReleaseTimePenalty;
+                RefreshFlySprite();
+            }
         }
         if (holdingGlide && !Input.GetMouseButton(0))
         {
@@ -95,29 +97,37 @@ public class Player : MonoBehaviour
         }
         if (holdingFly && CanFly())
         {
-            flyTimeMode = FlyTimeMode.CanFly;
             flyTime -= Time.deltaTime * flyBurnSpeed;
+            RefreshFlySprite();
 
             if (!trailInstance)
                 CreateTrail();
 
-            float currentMaxFlySpeed = mover.flyMaxSpeed;
-
             mover.applyGravity = false;
-            var dir = (Global.GetWorldPosition(Input.mousePosition) - transform.position).normalized;
-            /*
-            float dot = 1f;
-            if (mover.velocity != Vector3.zero && dir != Vector3.zero)
-            {
-                dot = Vector3.Dot(dir.normalized, mover.velocity.normalized);
-                Debug.LogWarning("dot: " + dot);
-                currentMaxFlySpeed *= (1f-dot) + 1f;
-            }
-            */
+            var diff = (Global.GetWorldPosition(Input.mousePosition) - transform.position);
+            var dir = diff.normalized;
 
-            mover.velocity = Vector3.MoveTowards(mover.velocity, dir * currentMaxFlySpeed, mover.flyAcceleration);
+            if (diff.sqrMagnitude < 1f)
+            {
+                dir = Vector3.zero;
+            }
+            
+            currentFlyMaxSpeed = Mathf.MoveTowards(currentFlyMaxSpeed, mover.flyMaxSpeed, Time.deltaTime * flyMaxSpeedDeceleration);
+
+            if (dir.y < 0f)
+            {
+                float newMaxSpeed = mover.flyMaxSpeed + Mathf.Abs(dir.y) * downExtraFlyMaxSpeed;
+                if (newMaxSpeed > currentFlyMaxSpeed)
+                {
+                    currentFlyMaxSpeed = Mathf.MoveTowards(currentFlyMaxSpeed, newMaxSpeed, Time.deltaTime * downFlyMaxSpeedAcceleration);
+                }
+            }
+
+            mover.velocity = Vector3.MoveTowards(mover.velocity, dir * currentFlyMaxSpeed, Time.deltaTime * mover.flyAcceleration);
+            
             if (mover.velocity != Vector3.zero)
                 rig.transform.up = mover.velocity.normalized;
+            
             if (Mathf.Sign(mover.velocity.x) != Mathf.Sign(rig.transform.localScale.x))
             {
                 var lscale = rig.transform.localScale;
@@ -136,21 +146,26 @@ public class Player : MonoBehaviour
         else
         {
             holdingFly = false;
-            flyTimeMode = FlyTimeMode.Recharging;
             DetachTrail();
 
             mover.applyGravity = true;
-            rig.transform.up = Vector3.up;
+            
+            RefreshFlySprite();
 
-            spriteRenderer.sprite = spriteFloat;
             rigOffset.localPosition = Vector3.zero;
 
             if (holdingGlide && CanGlide())
             {
                 var dir = (Global.GetWorldPosition(Input.mousePosition) - transform.position).normalized;
-                float x = mover.velocity.x;
-                x = Mathf.MoveTowards(x, dir.x * maxGlideXSpeed, Time.deltaTime * glideAcceleration);
-                mover.velocity.x = x;
+                mover.velocity.x = Mathf.MoveTowards(mover.velocity.x, dir.x * maxGlideXSpeed, Time.deltaTime * glideAcceleration);
+                if (Vector3.Dot(dir, Vector3.down) > .9f)
+                {
+                    mover.velocity.y = Mathf.MoveTowards(mover.velocity.y, mover.terminalDownY, Time.deltaTime * glideDownAccel);
+                }
+            }
+            else
+            {
+                mover.velocity.x = Mathf.MoveTowards(mover.velocity.x, 0f, Time.deltaTime * glideDeceleration);
             }
         }
 
@@ -158,17 +173,24 @@ public class Player : MonoBehaviour
         {
             spriteRenderer.sprite = spriteGround;
             rigOffset.localPosition = Vector3.up * .5f;
+            rig.transform.up = Vector3.up;
+            flyTime = maxFlyTime;
         }
     }
 
     bool CanFly()
     {
-        return (flyTimeMode == FlyTimeMode.CanFly && flyTime > 0f) || (flyTimeMode == FlyTimeMode.Recharging && flyTime >= flyTimeRechargedPoint);
+        return (flyTime > 0f);
+    }
+
+    bool CanStartFly()
+    {
+        return mover.onGround && CanFly();
     }
 
     bool CanGlide()
     {
-        return !CanFly() && !mover.onGround;
+        return !CanStartFly() && !mover.onGround && !holdingFly;
     }
 
     void CreateTrail()
@@ -177,6 +199,28 @@ public class Player : MonoBehaviour
         trailInstance.transform.parent = this.transform;
         trailInstance.transform.localPosition = new Vector3(0f, 0f, .5f);
         originalTrailWidth = trailInstance.GetComponent<TrailRenderer>().widthMultiplier;
+    }
+
+    void RefreshFlySprite()
+    {
+        Debug.LogWarning("flyTime: " + flyTime);
+        if (flyTime > 0f)
+        {
+            if (holdingFly)
+            {
+                spriteRenderer.sprite = spriteFly;
+            }
+            else
+            {
+                spriteRenderer.sprite = spriteFlyBreak;
+                rig.transform.up = Vector3.up;
+            }
+        }
+        else
+        {
+            spriteRenderer.sprite = spriteFloat;
+            rig.transform.up = Vector3.up;
+        }
     }
 
     void DetachTrail()
