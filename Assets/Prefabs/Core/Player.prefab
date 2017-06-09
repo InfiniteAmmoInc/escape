@@ -30,6 +30,21 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!1 &1114785210565324
+GameObject:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 4445596256804348}
+  m_Layer: 0
+  m_Name: RigOffset
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
 --- !u!1 &1181829719684950
 GameObject:
   m_ObjectHideFlags: 1
@@ -84,7 +99,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1000010239905742}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.14, y: 11.35, z: 0}
+  m_LocalPosition: {x: -85.2, y: -11.6, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 4681541834352632}
@@ -98,11 +113,11 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1877099338832124}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.013, y: 0.05, z: 0}
+  m_LocalPosition: {x: 0.013000488, y: 0.05000019, z: 0}
   m_LocalScale: {x: 0.5, y: 0.5, z: 1}
   m_Children: []
-  m_Father: {fileID: 4681541834352632}
-  m_RootOrder: 1
+  m_Father: {fileID: 4445596256804348}
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &4170329097851674
 Transform:
@@ -114,6 +129,21 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.8, y: 1.4, z: 1}
   m_Children: []
+  m_Father: {fileID: 4445596256804348}
+  m_RootOrder: 1
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!4 &4445596256804348
+Transform:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1114785210565324}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children:
+  - {fileID: 4136624521992208}
+  - {fileID: 4170329097851674}
   m_Father: {fileID: 4681541834352632}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -127,8 +157,7 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
-  - {fileID: 4170329097851674}
-  - {fileID: 4136624521992208}
+  - {fileID: 4445596256804348}
   m_Father: {fileID: 4000013639740334}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -161,9 +190,11 @@ MonoBehaviour:
   gravity: {x: 0, y: -9.8, z: 0}
   jumpForce: 10
   applyGravity: 1
-  terminalDownY: -15
-  flyMaxSpeed: 10
+  terminalDownY: -12
+  flyMaxSpeed: 12
   flyAcceleration: 1.5
+  slideAcceleration: 1
+  bouncePower: 0.75
   velocity: {x: 0, y: 0, z: 0}
 --- !u!114 &114000014041531000
 MonoBehaviour:
@@ -177,6 +208,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rig: {fileID: 4681541834352632}
+  rigOffset: {fileID: 4445596256804348}
   spriteRenderer: {fileID: 212680922515090466}
   prefabTrail: {fileID: 1662967914166554, guid: 2d55ed5231994b34d9c7d9a4cc25a98b,
     type: 2}
@@ -187,6 +219,8 @@ MonoBehaviour:
   flyTimeRechargedPoint: 1
   flyBurnSpeed: 1
   flyRechargeSpeed: 0.4
+  maxGlideXSpeed: 8
+  glideAcceleration: 20
 --- !u!135 &135000012798779110
 SphereCollider:
   m_ObjectHideFlags: 1

@@ -10,6 +10,8 @@ public class Mover : MonoBehaviour
     public bool applyGravity = true;
     public float terminalDownY = -15f;
     public float flyMaxSpeed, flyAcceleration;
+    public float slideAcceleration;
+    public float bouncePower;
     public bool onGround { get; private set; }
     
     SphereCollider sphereCollider;
@@ -90,8 +92,16 @@ public class Mover : MonoBehaviour
                     {
                         onGround = true;
                     }
+                    else if (raycastHit.normal.y > 0f)
+                    {
+                        // slide
+                        velocity += raycastHit.normal.x * slideAcceleration * Time.deltaTime * Vector3.right;
+                    }
                 }
-                velocity = Vector3.zero;
+                else
+                {
+                    velocity = -velocity * bouncePower;
+                }
             }
         }
     }
