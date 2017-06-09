@@ -5,7 +5,7 @@ using UnityEngine;
 public class TrailShrink : MonoBehaviour
 {
 	TrailRenderer trailRenderer;
-	float speed = .5f;
+	public float duration = .5f;
 
 	void Awake()
 	{
@@ -14,6 +14,12 @@ public class TrailShrink : MonoBehaviour
 
 	void Update()
 	{
-		trailRenderer.widthMultiplier = Mathf.MoveTowards(trailRenderer.widthMultiplier, 0f, Time.deltaTime * speed);
+		float startA = trailRenderer.startColor.a;
+		startA = Mathf.MoveTowards(startA, 0f, Time.deltaTime * (1f/duration));
+		trailRenderer.startColor = new Color(trailRenderer.startColor.r, trailRenderer.startColor.g, trailRenderer.startColor.b, startA);
+		float endA = trailRenderer.endColor.a;
+		endA = Mathf.MoveTowards(endA, 0f, Time.deltaTime * (1f/duration));
+		trailRenderer.endColor = new Color(trailRenderer.endColor.r, trailRenderer.endColor.g, trailRenderer.endColor.b, endA);
+		//trailRenderer.widthMultiplier = Mathf.MoveTowards(trailRenderer.widthMultiplier, 0f, Time.deltaTime * (1f/duration));
 	}
 }

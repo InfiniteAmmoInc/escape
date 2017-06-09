@@ -18,6 +18,7 @@ public class Player : MonoBehaviour
     public float downFlyMaxSpeedAcceleration;
     public float downExtraFlyMaxSpeed;
     public float maxFlyTime;
+    public float lastFlyFadeTime;
     public float flyTimeRechargedPoint;
     public float flyBurnSpeed = 1f, flyRechargeSpeed = 1f;
     public float flyReleaseSpeedMultiplier = .5f;
@@ -227,10 +228,20 @@ public class Player : MonoBehaviour
     {
         if (trailInstance != null)
         {
+            flyTime = 0f;
             trailInstance.transform.parent = null;
-            trailInstance.AddComponent<TrailShrink>();
-            Destroy(trailInstance, 15f);
+            var trailShrink = trailInstance.AddComponent<TrailShrink>();
+            trailShrink.duration = lastFlyFadeTime;
+            Destroy(trailInstance, trailShrink.duration);
+            CancelInvoke("ResetFlyTime");
+            Invoke("ResetFlyTime", lastFlyFadeTime);
             trailInstance = null;
         }
+    }
+
+    void ResetFlyTime()
+    {
+        if (trailInstance == null)
+            flyTime = maxFlyTime;
     }
 }

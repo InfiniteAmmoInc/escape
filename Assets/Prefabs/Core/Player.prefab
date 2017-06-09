@@ -220,7 +220,8 @@ MonoBehaviour:
   flyMaxSpeedDeceleration: 5
   downFlyMaxSpeedAcceleration: 15
   downExtraFlyMaxSpeed: 0
-  maxFlyTime: 6
+  maxFlyTime: 1.5
+  lastFlyFadeTime: 0.5
   flyTimeRechargedPoint: 1
   flyBurnSpeed: 1
   flyRechargeSpeed: 0.4
