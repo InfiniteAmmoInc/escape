@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class Player : MonoBehaviour
 {
@@ -7,6 +8,7 @@ public class Player : MonoBehaviour
     public Transform rigOffset;
     public SpriteRenderer spriteRenderer;
     public GameObject prefabTrail;
+    public GameObject prefabLoopBoost;
 
     public Sprite spriteFloat;
     public Sprite spriteFly;
@@ -14,6 +16,8 @@ public class Player : MonoBehaviour
     public Sprite spriteGround;
 
     public float burstSpeed;
+    public float loopBoostSpeed;
+    public float loopThresholdAngle = 5f;
     public float flyMaxSpeedDeceleration;
     public float downFlyMaxSpeedAcceleration;
     public float downExtraFlyMaxSpeed;
@@ -27,6 +31,19 @@ public class Player : MonoBehaviour
     public float glideAcceleration = 1f;
     public float glideDeceleration;
     public float glideDownAccel;
+
+    public class FlyNode
+    {
+        public FlyNode(Vector3 point)
+        {
+            this.point = point;
+        }
+        public Vector3 point;
+        public bool markedAsLoop;
+        public float angleToNext;
+    }
+
+    List<FlyNode> flyNodes = new List<FlyNode>();
 
     float flyTime;
 
@@ -58,7 +75,11 @@ public class Player : MonoBehaviour
 
     void UpdateInput()
     {
-
+        if (mover.onGround)
+        {
+            DetachTrail();
+            holdingFly = false;
+        }
 
         if (Input.GetMouseButtonDown(0))
         {
@@ -142,9 +163,14 @@ public class Player : MonoBehaviour
             {
                 trailInstance.GetComponent<TrailRenderer>().widthMultiplier = originalTrailWidth * (flyTime / maxFlyTime);
             }
+
+            flyNodes.Add(new FlyNode(transform.position));
+            CheckFlyNodesForLoop();
         }
         else
         {
+            flyNodes.Clear();
+
             holdingFly = false;
             DetachTrail();
 
@@ -203,7 +229,6 @@ public class Player : MonoBehaviour
 
     void RefreshFlySprite()
     {
-        Debug.LogWarning("flyTime: " + flyTime);
         if (flyTime > 0f)
         {
             if (holdingFly)
@@ -231,6 +256,92 @@ public class Player : MonoBehaviour
             trailInstance.AddComponent<TrailShrink>();
             Destroy(trailInstance, 15f);
             trailInstance = null;
+        }
+    }
+
+    void CheckFlyNodesForLoop()
+    {
+        bool foundLoop = false;
+        int loopEndIndex = 0;
+        float totalAngle = 0f;
+        for (int i = 1; i < flyNodes.Count-1; i++)
+        {
+            if (!flyNodes[i].markedAsLoop)
+            {
+                var diff = flyNodes[i+1].point - flyNodes[i].point;
+                var diff0 = flyNodes[i].point - flyNodes[i-1].point;
+                float angleBetween = Vector3.Angle(diff0.normalized, diff.normalized);
+                
+                if (Mathf.Abs(angleBetween) < loopThresholdAngle)
+                {
+                    totalAngle = 0f;
+                }
+                else
+                {
+                    
+                    totalAngle += angleBetween;
+                    //Debug.LogWarning("i: " + i + " angleBetween: " + angleBetween + " totalAngle: " + totalAngle);
+
+                    flyNodes[i].angleToNext = angleBetween;
+                    if (Mathf.Abs(totalAngle) > 360f)
+                    {
+                        Debug.LogWarning("foundLoop!");
+                        foundLoop = true;
+                        loopEndIndex = i;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (foundLoop)
+        {
+            float remainingAngle = totalAngle;
+            Vector3 totalPoint = Vector3.zero;
+            int count = 0;
+            int otherIndex = 0;
+            for (int i = loopEndIndex; i >= 0; i --)
+            {
+                remainingAngle -= flyNodes[i].angleToNext * Mathf.Sign(totalAngle);
+                flyNodes[i].markedAsLoop = true;
+                totalPoint += flyNodes[i].point;
+                count++;
+                if ((Mathf.Sign(totalAngle) > 0f && remainingAngle < 0f) || (Mathf.Sign(totalAngle) < 0f && remainingAngle > 0f))
+                {
+                    otherIndex = i;
+                    // we're done!
+                    break;
+                }
+            }
+
+            Vector3 averagePoint = totalPoint / (float)count;
+            //averagePoint = (averagePoint * .25f + transform.position * .75f);
+
+            LoopBoost(flyNodes[loopEndIndex].point, averagePoint);
+            flyNodes.Clear();
+
+        }
+    }
+
+    void LoopBoost(Vector3 endPoint, Vector3 averagePoint)
+    {
+        currentFlyMaxSpeed = loopBoostSpeed;
+        mover.velocity = mover.velocity.normalized * currentFlyMaxSpeed;
+        //holdingFly = false;
+        Instantiate(prefabLoopBoost, endPoint, Quaternion.identity);
+        //Instantiate(prefabLoopBoost, averagePoint, Quaternion.identity);
+        var go = (GameObject)Instantiate(prefabLoopBoost, transform.position, Quaternion.identity);
+        go.transform.parent = transform;
+    }
+
+    void OnDrawGizmos()
+    {
+        for (int i = 0; i < flyNodes.Count; i++)
+        {
+            Gizmos.color = Color.black;
+            if (flyNodes[i].markedAsLoop)
+                Gizmos.color = Color.yellow * .5f + Color.red * .5f;
+            Gizmos.DrawWireSphere(flyNodes[i].point, .25f);
         }
     }
 }

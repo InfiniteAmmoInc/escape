@@ -212,19 +212,23 @@ MonoBehaviour:
   spriteRenderer: {fileID: 212680922515090466}
   prefabTrail: {fileID: 1662967914166554, guid: 2d55ed5231994b34d9c7d9a4cc25a98b,
     type: 2}
+  prefabLoopBoost: {fileID: 1918987835400870, guid: 459a21573117df34cac8b5a186c8c031,
+    type: 2}
   spriteFloat: {fileID: 21300000, guid: 3d1abd83cdaf93748b528b89e1014363, type: 3}
   spriteFly: {fileID: 21300000, guid: 9bb08c1c19f096d4eb6f91888b3659a1, type: 3}
   spriteFlyBreak: {fileID: 21300000, guid: 3d1abd83cdaf93748b528b89e1014363, type: 3}
   spriteGround: {fileID: 21300000, guid: 1a8999bb800c7d14ab4cc62fc270fb41, type: 3}
-  burstSpeed: 25
-  flyMaxSpeedDeceleration: 5
+  burstSpeed: 30
+  loopBoostSpeed: 40
+  loopThresholdAngle: 0.5
+  flyMaxSpeedDeceleration: 40
   downFlyMaxSpeedAcceleration: 15
   downExtraFlyMaxSpeed: 0
   maxFlyTime: 6
   flyTimeRechargedPoint: 1
   flyBurnSpeed: 1
   flyRechargeSpeed: 0.4
-  flyReleaseSpeedMultiplier: 0.9
+  flyReleaseSpeedMultiplier: 0.8
   flyReleaseTimePenalty: 0.5
   maxGlideXSpeed: 8
   glideAcceleration: 20
