@@ -15,9 +15,15 @@ public class Player : MonoBehaviour
     public Sprite spriteFlyBreak;
     public Sprite spriteGround;
 
+    public bool doCheckFlyNodesForLoop;
+    public bool doLoopBoost;
+    public bool requireAverageAngleForLoop;
+
     public float burstSpeed;
     public float loopBoostSpeed;
-    public float loopThresholdAngle = 5f;
+    public float loopThresholdAngleMin = 10f;
+    public float loopThresholdAngleMax = 20f;
+    public float angleToLoop = 360f;
     public float flyMaxSpeedDeceleration;
     public float downFlyMaxSpeedAcceleration;
     public float downExtraFlyMaxSpeed;
@@ -144,7 +150,8 @@ public class Player : MonoBehaviour
                 }
             }
 
-            mover.velocity = Vector3.MoveTowards(mover.velocity, dir * currentFlyMaxSpeed, Time.deltaTime * mover.flyAcceleration);
+            if (dir != Vector3.zero)
+                mover.velocity = Vector3.MoveTowards(mover.velocity, dir * currentFlyMaxSpeed, Time.deltaTime * mover.flyAcceleration);
             
             if (mover.velocity != Vector3.zero)
                 rig.transform.up = mover.velocity.normalized;
@@ -165,7 +172,8 @@ public class Player : MonoBehaviour
             }
 
             flyNodes.Add(new FlyNode(transform.position));
-            CheckFlyNodesForLoop();
+            if (doCheckFlyNodesForLoop)
+                CheckFlyNodesForLoop();
         }
         else
         {
@@ -261,77 +269,99 @@ public class Player : MonoBehaviour
 
     void CheckFlyNodesForLoop()
     {
-        bool foundLoop = false;
-        int loopEndIndex = 0;
-        float totalAngle = 0f;
-        for (int i = 1; i < flyNodes.Count-1; i++)
+        if (doCheckFlyNodesForLoop)
         {
-            if (!flyNodes[i].markedAsLoop)
+            bool foundLoop = false;
+            int loopEndIndex = 0;
+            float totalAngle = 0f;
+            for (int i = 1; i < flyNodes.Count-1; i++)
             {
-                var diff = flyNodes[i+1].point - flyNodes[i].point;
-                var diff0 = flyNodes[i].point - flyNodes[i-1].point;
-                float angleBetween = Vector3.Angle(diff0.normalized, diff.normalized);
-                
-                if (Mathf.Abs(angleBetween) < loopThresholdAngle)
+                if (!flyNodes[i].markedAsLoop)
                 {
-                    totalAngle = 0f;
-                }
-                else
-                {
+                    var diff = flyNodes[i+1].point - flyNodes[i].point;
+                    var diff0 = flyNodes[i].point - flyNodes[i-1].point;
+                    float angleBetween = Vector3.Angle(diff0.normalized, diff.normalized);
+                    var cross = Vector3.Cross(diff0.normalized, diff.normalized);
+                    if (cross.z < 0f)
+                        angleBetween = -angleBetween;
                     
-                    totalAngle += angleBetween;
-                    //Debug.LogWarning("i: " + i + " angleBetween: " + angleBetween + " totalAngle: " + totalAngle);
-
-                    flyNodes[i].angleToNext = angleBetween;
-                    if (Mathf.Abs(totalAngle) > 360f)
+                    //if (Mathf.Abs(angleBetween) < loopThresholdAngle)
+                    if (false)
                     {
-                        Debug.LogWarning("foundLoop!");
-                        foundLoop = true;
-                        loopEndIndex = i;
-                        break;
+                        totalAngle = 0f;
+                    }
+                    else
+                    {
+                        
+                        totalAngle += angleBetween;
+                        //Debug.LogWarning("i: " + i + " angleBetween: " + angleBetween + " totalAngle: " + totalAngle);
+
+                        flyNodes[i].angleToNext = angleBetween;
+                        if (Mathf.Abs(totalAngle) > angleToLoop)
+                        {
+                            Debug.LogWarning("foundLoop!");
+                            foundLoop = true;
+                            loopEndIndex = i;
+                            break;
+                        }
                     }
                 }
             }
-        }
 
-        if (foundLoop)
-        {
-            float remainingAngle = totalAngle;
-            Vector3 totalPoint = Vector3.zero;
-            int count = 0;
-            int otherIndex = 0;
-            for (int i = loopEndIndex; i >= 0; i --)
+            if (foundLoop)
             {
-                remainingAngle -= flyNodes[i].angleToNext * Mathf.Sign(totalAngle);
-                flyNodes[i].markedAsLoop = true;
-                totalPoint += flyNodes[i].point;
-                count++;
-                if ((Mathf.Sign(totalAngle) > 0f && remainingAngle < 0f) || (Mathf.Sign(totalAngle) < 0f && remainingAngle > 0f))
+                float remainingAngle = totalAngle;
+                Vector3 totalPoint = Vector3.zero;
+                int count = 0;
+                int otherIndex = 0;
+                float averageAngle = 0f;
+                for (int i = loopEndIndex; i >= 0; i --)
                 {
-                    otherIndex = i;
-                    // we're done!
-                    break;
+                    remainingAngle -= flyNodes[i].angleToNext * Mathf.Sign(totalAngle);
+                    flyNodes[i].markedAsLoop = true;
+                    totalPoint += flyNodes[i].point;
+                    count++;
+                    averageAngle += flyNodes[i].angleToNext;
+                    if ((Mathf.Sign(totalAngle) > 0f && remainingAngle < 0f) || (Mathf.Sign(totalAngle) < 0f && remainingAngle > 0f))
+                    {
+                        otherIndex = i;
+                        // we're done!
+                        break;
+                    }
                 }
+
+                averageAngle /= (float)count;
+
+                Debug.LogError("averageAngle: " + averageAngle + " time: " + Time.time);
+                if (!requireAverageAngleForLoop || (Mathf.Abs(averageAngle) > loopThresholdAngleMin && Mathf.Abs(averageAngle) < loopThresholdAngleMax))
+                {
+                    Vector3 averagePoint = totalPoint / (float)count;
+                    //averagePoint = (averagePoint * .25f + transform.position * .75f);
+
+                    LoopBoost(flyNodes[loopEndIndex].point, averagePoint);
+                }
+
+                flyNodes.Clear();
+
             }
-
-            Vector3 averagePoint = totalPoint / (float)count;
-            //averagePoint = (averagePoint * .25f + transform.position * .75f);
-
-            LoopBoost(flyNodes[loopEndIndex].point, averagePoint);
-            flyNodes.Clear();
-
         }
     }
 
     void LoopBoost(Vector3 endPoint, Vector3 averagePoint)
     {
-        currentFlyMaxSpeed = loopBoostSpeed;
-        mover.velocity = mover.velocity.normalized * currentFlyMaxSpeed;
-        //holdingFly = false;
-        Instantiate(prefabLoopBoost, endPoint, Quaternion.identity);
-        //Instantiate(prefabLoopBoost, averagePoint, Quaternion.identity);
-        var go = (GameObject)Instantiate(prefabLoopBoost, transform.position, Quaternion.identity);
-        go.transform.parent = transform;
+        if (doLoopBoost)
+        {
+            flyNodes.Clear();
+            flyTime = maxFlyTime;
+            //DetachTrail();
+            currentFlyMaxSpeed = loopBoostSpeed;
+            mover.velocity = mover.velocity.normalized * currentFlyMaxSpeed;
+            //holdingFly = false;
+            Instantiate(prefabLoopBoost, endPoint, Quaternion.identity);
+            //Instantiate(prefabLoopBoost, averagePoint, Quaternion.identity);
+            var go = (GameObject)Instantiate(prefabLoopBoost, transform.position, Quaternion.identity);
+            go.transform.parent = transform;
+        }
     }
 
     void OnDrawGizmos()

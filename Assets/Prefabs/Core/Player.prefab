@@ -218,9 +218,14 @@ MonoBehaviour:
   spriteFly: {fileID: 21300000, guid: 9bb08c1c19f096d4eb6f91888b3659a1, type: 3}
   spriteFlyBreak: {fileID: 21300000, guid: 3d1abd83cdaf93748b528b89e1014363, type: 3}
   spriteGround: {fileID: 21300000, guid: 1a8999bb800c7d14ab4cc62fc270fb41, type: 3}
+  doCheckFlyNodesForLoop: 1
+  doLoopBoost: 1
+  requireAverageAngleForLoop: 1
   burstSpeed: 30
   loopBoostSpeed: 40
-  loopThresholdAngle: 0.5
+  loopThresholdAngleMin: 6
+  loopThresholdAngleMax: 30
+  angleToLoop: 340
   flyMaxSpeedDeceleration: 40
   downFlyMaxSpeedAcceleration: 15
   downExtraFlyMaxSpeed: 0
@@ -232,7 +237,7 @@ MonoBehaviour:
   flyReleaseTimePenalty: 0.5
   maxGlideXSpeed: 8
   glideAcceleration: 20
-  glideDeceleration: 10
+  glideDeceleration: 40
   glideDownAccel: 40
 --- !u!135 &135000012798779110
 SphereCollider:

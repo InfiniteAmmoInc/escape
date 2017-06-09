@@ -41,6 +41,9 @@ TagManager:
   - name: BGParticles
     uniqueID: 3036102085
     locked: 0
+  - name: BigPlantBG
+    uniqueID: 1433259941
+    locked: 0
   - name: PlantBabies
     uniqueID: 1089565863
     locked: 0
