@@ -346,11 +346,6 @@ Prefab:
       propertyPath: m_RootOrder
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 114000014041531000, guid: 5826964281fd09d449685e97d556e841,
-        type: 2}
-      propertyPath: lastFlyFadeTime
-      value: 1
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: 5826964281fd09d449685e97d556e841, type: 2}
   m_IsPrefabParent: 0
