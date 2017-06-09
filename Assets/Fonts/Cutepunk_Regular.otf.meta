@@ -1,0 +1,22 @@
+fileFormatVersion: 2
+guid: c4ba7107246d74abd94b98faedc1ead2
+timeCreated: 1496975206
+licenseType: Pro
+TrueTypeFontImporter:
+  serializedVersion: 4
+  fontSize: 256
+  forceTextureCase: -2
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontName: Cutepunk
+  fontNames:
+  - Cutepunk
+  fallbackFontReferences:
+  - {fileID: 12800000, guid: 1d92fa83355c247918d213cab57ef1cf, type: 3}
+  customCharacters: 
+  fontRenderingMode: 0
+  ascentCalculationMode: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
